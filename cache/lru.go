@@ -2,17 +2,14 @@ package cache
 
 import (
 	"fmt"
-	"slices"
+	dll "github.com/emirpasic/gods/lists/doublylinkedlist"
 	"sync"
 )
-
-// TODO: use a LRUEntry struct with (key-val pair, and lastUsed)
-// instead of order slice for beter performance
 
 type lruCache[Key comparable, Val any] struct {
 	capacity int
 	store    map[Key]Val
-	order    []Key
+	order    *dll.List
 	mu       sync.Mutex
 }
 
@@ -23,7 +20,7 @@ func NewLRU[Key comparable, Val any](cap int) (Cache[Key, Val], error) {
 	return &lruCache[Key, Val]{
 		capacity: cap,
 		store:    make(map[Key]Val),
-		order:    make([]Key, 0, cap),
+		order:    dll.New(),
 	}, nil
 }
 
@@ -31,9 +28,9 @@ func (c *lruCache[Key, Val]) Get(k Key) (Val, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if val, ok := c.store[k]; ok {
+	if v, ok := c.store[k]; ok {
 		c.recentify(k)
-		return val, true
+		return v, true
 	}
 	var z Val
 	return z, false
@@ -44,28 +41,24 @@ func (c *lruCache[Key, Val]) Put(k Key, v Val) {
 	defer c.mu.Unlock()
 
 	if _, ok := c.store[k]; ok {
-		c.recentify(k)
 		c.store[k] = v
+		c.recentify(k)
 	} else {
 		if len(c.store) == c.capacity {
-			evc := c.evict()
-			delete(c.store, evc)
+			c.evict()
 		}
-		c.recentify(k)
 		c.store[k] = v
+		c.order.Add(k)
 	}
 }
 
-func (c *lruCache[Key, Val]) evict() Key {
-	evc := c.order[0]
-	c.order = c.order[1:]
-	return evc
+func (c *lruCache[Key, Val]) evict() {
+	t, _ := c.order.Get(0)
+	c.order.Remove(0)
+	delete(c.store, t.(Key))
 }
 
 func (c *lruCache[Key, Val]) recentify(k Key) {
-	// this func deleted all elements that satisfy the condition
-	// but any key will appear once (keys are unique)
-	// so it will do only one deletion
-	c.order = slices.DeleteFunc(c.order, func(e Key) bool { return e == k })
-	c.order = append(c.order, k)
+	c.order.Remove(c.order.IndexOf(k))
+	c.order.Add(k)
 }
