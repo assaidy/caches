@@ -13,7 +13,7 @@ type lruCache[Key comparable, Val any] struct {
 	mu       sync.Mutex
 }
 
-func NewLRU[Key comparable, Val any](cap int) (Cache[Key, Val], error) {
+func NewLRU[Key comparable, Val any](cap int) (*lruCache[Key, Val], error) {
 	if cap <= 0 {
 		return nil, fmt.Errorf("capacity must be greater than zero")
 	}
