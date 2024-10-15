@@ -13,26 +13,26 @@ type cacheEntry[Key comparable, Val any] struct {
 	lastVisited time.Time
 }
 
-type ttlCache[Key comparable, Val any] struct {
+type TTLCache[Key comparable, Val any] struct {
 	store         map[Key]*cacheEntry[Key, Val]
 	timeToLive    time.Duration
 	resetOnAccess bool
 	mu            sync.Mutex
 }
 
-func NewTTL[Key comparable, Val any](ttl time.Duration, roa bool) (*ttlCache[Key, Val], error) {
+func NewTTL[Key comparable, Val any](ttl time.Duration, roa bool) (*TTLCache[Key, Val], error) {
 	if ttl <= 0 {
 		return nil, fmt.Errorf("ttl must be greater than zero.")
 	}
 
-	return &ttlCache[Key, Val]{
+	return &TTLCache[Key, Val]{
 		store:         make(map[Key]*cacheEntry[Key, Val]),
 		timeToLive:    ttl,
 		resetOnAccess: roa,
 	}, nil
 }
 
-func (c *ttlCache[Key, Val]) Get(k Key) (Val, bool) {
+func (c *TTLCache[Key, Val]) Get(k Key) (Val, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -46,7 +46,7 @@ func (c *ttlCache[Key, Val]) Get(k Key) (Val, bool) {
 	return z, false
 }
 
-func (c *ttlCache[Key, Val]) Put(k Key, v Val) {
+func (c *TTLCache[Key, Val]) Put(k Key, v Val) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -63,13 +63,13 @@ func (c *ttlCache[Key, Val]) Put(k Key, v Val) {
 	}
 }
 
-func (c *ttlCache[Key, Val]) Size() int {
+func (c *TTLCache[Key, Val]) Size() int {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return len(c.store)
 }
 
-func (c *ttlCache[Key, Val]) Cleanup() {
+func (c *TTLCache[Key, Val]) Cleanup() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -80,7 +80,7 @@ func (c *ttlCache[Key, Val]) Cleanup() {
 	}
 }
 
-func (c *ttlCache[Key, Val]) ScheduleCleanup(ctx context.Context, e time.Duration) {
+func (c *TTLCache[Key, Val]) ScheduleCleanup(ctx context.Context, e time.Duration) {
 	go func() {
 		ticker := time.NewTicker(e)
 		defer ticker.Stop()

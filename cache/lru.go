@@ -6,25 +6,25 @@ import (
 	"sync"
 )
 
-type lruCache[Key comparable, Val any] struct {
+type LRUCache[Key comparable, Val any] struct {
 	capacity int
 	store    map[Key]Val
 	order    *dll.List
 	mu       sync.Mutex
 }
 
-func NewLRU[Key comparable, Val any](cap int) (*lruCache[Key, Val], error) {
+func NewLRU[Key comparable, Val any](cap int) (*LRUCache[Key, Val], error) {
 	if cap <= 0 {
 		return nil, fmt.Errorf("capacity must be greater than zero")
 	}
-	return &lruCache[Key, Val]{
+	return &LRUCache[Key, Val]{
 		capacity: cap,
 		store:    make(map[Key]Val),
 		order:    dll.New(),
 	}, nil
 }
 
-func (c *lruCache[Key, Val]) Get(k Key) (Val, bool) {
+func (c *LRUCache[Key, Val]) Get(k Key) (Val, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -36,7 +36,7 @@ func (c *lruCache[Key, Val]) Get(k Key) (Val, bool) {
 	return z, false
 }
 
-func (c *lruCache[Key, Val]) Put(k Key, v Val) {
+func (c *LRUCache[Key, Val]) Put(k Key, v Val) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -52,13 +52,13 @@ func (c *lruCache[Key, Val]) Put(k Key, v Val) {
 	}
 }
 
-func (c *lruCache[Key, Val]) evict() {
+func (c *LRUCache[Key, Val]) evict() {
 	t, _ := c.order.Get(0)
 	c.order.Remove(0)
 	delete(c.store, t.(Key))
 }
 
-func (c *lruCache[Key, Val]) recentify(k Key) {
+func (c *LRUCache[Key, Val]) recentify(k Key) {
 	c.order.Remove(c.order.IndexOf(k))
 	c.order.Add(k)
 }
