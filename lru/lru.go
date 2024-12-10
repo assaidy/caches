@@ -17,6 +17,7 @@ func NewLRU[Key comparable, Val any](cap int) (*LRUCache[Key, Val], error) {
 	if cap <= 0 {
 		return nil, fmt.Errorf("capacity must be greater than zero")
 	}
+
 	return &LRUCache[Key, Val]{
 		capacity: cap,
 		store:    make(map[Key]Val),
@@ -32,6 +33,7 @@ func (c *LRUCache[Key, Val]) Get(k Key) (Val, bool) {
 		c.recentify(k)
 		return v, true
 	}
+
 	var z Val
 	return z, false
 }
